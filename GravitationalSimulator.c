@@ -11,51 +11,47 @@ struct Acceleration {
     int somenumber2;
 };
 
-// struct Planet {
-//     Position position;
-//     int mass;
-//     int velocity;
-//     Acceleration acceleration;
-// };
+ struct Planet {
+     struct Position position;
+     int mass;
+     int velocity;
+     struct Acceleration acceleration;
+ };
 
 void GenerateDebugData(int planetCount) {
     printf("you entered %d", planetCount);
 }
 
-void SimulateWithBruteforce () {
-    foreach (PlanetController planet in planets) {
-        if (!planet.IsAlive)
-            continue;
+void calculateNewtonGravityAcceleration(body *a, body *b, float *ax, float *ay) {
+    float softening = 10000;
+    float distanceX = b->x - a->x;
+    float distanceY = b->y - a->y;
+    float vectorDistance = a->x * a->x + a->y * a->y + softening;
+    float vectorDistanceCubed = vectorDistance * vectorDistance * vectorDistance;
+    float inverse = 1.0 / sqrt(vectorDistanceCubed);
+    float scale = b->mass * inverse;
+    *ax = (distanceX * scale);
+    *ay = (distanceY * scale);
+}
 
-        Vector2 acceleration = Vector2.zero;
-        foreach (PlanetController anotherPlanet in planets) {
-            if (planet == anotherPlanet || !anotherPlanet.IsAlive)
+void SimulateWithBruteforce (int rank, int totalBodies, int nBodies, body *bodies, body *local_bodies, float dt) {
+    for(size_t i = 0; i < nBodies; i++) {
+        float total_ax = 0, total_ay = 0;
+        for (size_t j = 0; j < totalBodies; j++) {
+            if (j == nBodies * rank + i) {
                 continue;
-
-            acceleration += CalculateNewtonGravityAcceleration (planet, anotherPlanet);
+            }
+            float ax, ay;
+            calculateNewtonGravityAcceleration(&local_bodies[i], &bodies[j], &ax, &ay);
+            total_ax += ax;
+            total_ay += ay;
         }
-
-        planet.Acceleration = acceleration;
+        local_bodies[i].ax = total_ax;
+        local_bodies[i].ay = total_ay;
+        integrate(&local_bodies[i], dt);
     }
 }
 
-
-
-Vector2 CalculateNewtonGravityAcceleration (IBody firstBody, IBody secondBody) {
-    ++interactions;
-
-    Vector2 acceleration = Vector2.zero;
-
-    Vector2 galacticPlaneR = secondBody.Position - firstBody.Position;
-
-    float distanceSquared = galacticPlaneR.sqrMagnitude + distanceSquared * distanceSquared * distanceSquared;
-    float inverse = 1.0f / Mathf.Sqrt (distanceSquaredCubed);
-    float scale = secondBody.Mass * inverse;
-
-    acceleration += galacticPlaneR * scale;
-
-    return acceleration;
-}
 
 int main() {
     int planetCount;
