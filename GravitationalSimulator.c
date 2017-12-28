@@ -15,6 +15,28 @@ typedef struct Planet_s {
 	float mass;		// mass
 } Planet;
 
+float generateRandom() {
+  return (float)(rand() / RAND_MAX);
+}
+
+Planet  *initializePlanets (int nPlanets) {
+  srand(time(NULL));
+	const float accelerationScale = 100.0;
+	Planet *planets = (Planet *) malloc(sizeof(*planets) * nPlanets);
+	for (int i = 0; i < nPlanets; i++) {
+		float angle = 	((float) i / nPlanets) * 2.0 * PI + ((generateRandom() - 0.5) * 0.5);
+		float initialMass = 1000;
+		Planet object = {
+			.x = generateRandom(), .y = generateRandom(),
+			.vx = cos(angle) * accelerationScale * generateRandom(),
+			.vy = sin(angle) * accelerationScale * generateRandom(),
+			.mass = initialMass * generateRandom() + initialMass * 0.5
+		};
+    planets[i] = object;
+  }
+  return planets;
+}
+
 void integrate(Planet *planet, float deltaTime) {
 	planet->vx += planet->ax * deltaTime;
 	planet->vy += planet->ay * deltaTime;
@@ -50,28 +72,6 @@ void simulateWithBruteforce(int rank, int totalPlanets, int nPlanets, Planet *pl
 		local_planets[i].ay = total_ay;
 		integrate(&local_planets[i], dt);
 	}
-}
-
-Planet  *initializePlanets (int nPlanets) {
-  srand(time(NULL));
-	const float accelerationScale = 100.0;
-	Planet *planets = (Planet *) malloc(sizeof(*planets) * nPlanets);
-	for (int i = 0; i < nPlanets; i++) {
-		float angle = 	((float) i / nPlanets) * 2.0 * PI + ((generateRandom() - 0.5) * 0.5);
-		float initialMass = 1000;
-		Planet object = {
-			.x = generateRandom(), .y = generateRandom(),
-			.vx = cos(angle) * accelerationScale * generateRandom(),
-			.vy = sin(angle) * accelerationScale * generateRandom(),
-			.mass = initialMass * generateRandom() + initialMass * 0.5
-		};
-    planets[i] = object;
-  }
-  return planets;
-}
-
-float generateRandom() {
-  return (float)(rand() / RAND_MAX);
 }
 
 int main(int argc, char **argv) {
@@ -148,7 +148,6 @@ int main(int argc, char **argv) {
 	  		integrate(&gathered_planets[i], dt);
 	  	}
 	  }
-
   }
 	if (planets != NULL) {
     free(planets);
